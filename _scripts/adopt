@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 [--dry-run] <pkgbase>" >&2
+  exit 2
+}
+
+dry_run=false
+if [[ ${1:-} == "--dry-run" ]]; then
+  dry_run=true
+  shift
+fi
+
+[[ $# -eq 1 ]] || usage
+pkgbase=$1
+[[ $pkgbase =~ ^[A-Za-z0-9@_+][A-Za-z0-9@._+-]*$ ]] || {
+  echo "Invalid pkgbase: $pkgbase" >&2
+  exit 2
+}
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+  echo "The monorepo needs an initial commit before adopting packages." >&2
+  exit 1
+fi
+
+if ! status=$(git status --porcelain --untracked-files=all); then
+  echo "Could not determine worktree status." >&2
+  exit 1
+fi
+if [[ -n $status ]]; then
+  echo "Refusing to adopt into a dirty worktree." >&2
+  exit 1
+fi
+
+if [[ -e $repo_root/$pkgbase ]] || git cat-file -e "HEAD:$pkgbase" 2>/dev/null; then
+  echo "Package directory '$pkgbase' already exists." >&2
+  exit 1
+fi
+
+read_url="https://aur.archlinux.org/${pkgbase}.git"
+tmpdir=$(mktemp -d)
+trap 'rm -rf "$tmpdir"' EXIT
+
+git clone --quiet --single-branch --branch master "$read_url" "$tmpdir/package"
+
+[[ -f $tmpdir/package/PKGBUILD ]] || {
+  echo "AUR repository '$pkgbase' has no PKGBUILD." >&2
+  exit 1
+}
+[[ -f $tmpdir/package/.SRCINFO ]] || {
+  echo "AUR repository '$pkgbase' has no .SRCINFO." >&2
+  exit 1
+}
+
+remote_pkgbase=$(sed -n 's/^[[:space:]]*pkgbase[[:space:]]*=[[:space:]]*//p' "$tmpdir/package/.SRCINFO" | head -n 1)
+[[ $remote_pkgbase == "$pkgbase" ]] || {
+  echo "Requested pkgbase '$pkgbase' does not match AUR metadata '$remote_pkgbase'." >&2
+  exit 1
+}
+
+aur_tip=$(git -C "$tmpdir/package" rev-parse HEAD)
+if $dry_run; then
+  echo "Would adopt '$pkgbase' from $read_url"
+  echo "AUR tip: $aur_tip"
+  exit 0
+fi
+
+git subtree add --prefix="$pkgbase" "$tmpdir/package" master
+split_tip=$(git subtree split --prefix="$pkgbase")
+
+if ! git merge-base --is-ancestor "$aur_tip" "$split_tip"; then
+  echo "Adopted subtree does not preserve the current AUR history." >&2
+  echo "Inspect the new subtree commit before doing anything else." >&2
+  exit 1
+fi
+
+echo "Adopted '$pkgbase' with AUR history through $aur_tip"
+echo "This imports Git history only; it does not grant AUR maintainership."
