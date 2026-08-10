@@ -35,8 +35,10 @@ pkgbase = feather-wallet
 	source = https://featherwallet.org/files/releases/source/feather-2.8.1.tar.gz
 	source = epee-cmath.patch
 	source = zxing-reader-options.patch
+	source = trezor-boost-includes.patch
 	sha256sums = 1db8cbc5123abc8de63c96e6aedc08a8cda669b032b75c18f955e71ce8c4291e
 	sha256sums = 07a66440c7decb2f923a6f35a79227352a692f465c895d2f96b3d9bcca60da1b
 	sha256sums = 1506ce6fda96e526d2811c4a35116310834668c46b21e815bcfb31868f909180
+	sha256sums = e1123d5de2b3d9c3ec3a18a5dc9d9b0942a487efc3a68bf3f3be4649f401dc12
 
 pkgname = feather-wallet
