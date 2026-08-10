@@ -19,16 +19,19 @@ conflicts=('monero-feather' 'monero-feather-git' 'featherwallet-bin' 'featherwal
 
 source=(https://featherwallet.org/files/releases/source/feather-${pkgver}.tar.gz
         epee-cmath.patch
-        zxing-reader-options.patch)
+        zxing-reader-options.patch
+        trezor-boost-includes.patch)
 
 sha256sums=('1db8cbc5123abc8de63c96e6aedc08a8cda669b032b75c18f955e71ce8c4291e'
             '07a66440c7decb2f923a6f35a79227352a692f465c895d2f96b3d9bcca60da1b'
-            '1506ce6fda96e526d2811c4a35116310834668c46b21e815bcfb31868f909180')
+            '1506ce6fda96e526d2811c4a35116310834668c46b21e815bcfb31868f909180'
+            'e1123d5de2b3d9c3ec3a18a5dc9d9b0942a487efc3a68bf3f3be4649f401dc12')
 
 prepare() {
 	cd "${_pkgname}"
 	patch -p1 < "${srcdir}/epee-cmath.patch"
 	patch -p1 < "${srcdir}/zxing-reader-options.patch"
+	patch -p1 < "${srcdir}/trezor-boost-includes.patch"
 }
 
 build() {
