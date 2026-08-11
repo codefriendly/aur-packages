@@ -9,6 +9,7 @@ maintainer.
 
 | Package | Status |
 | --- | --- |
+| `chatgpt-desktop-bin` | Local package for OpenAI's official Linux desktop build |
 | [`feather-wallet`](https://aur.archlinux.org/packages/feather-wallet) | Compatibility and build fixes |
 | [`sononym`](https://aur.archlinux.org/packages/sononym) | Packaging and version updates |
 

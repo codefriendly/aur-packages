@@ -1,0 +1,76 @@
+# Maintainer: CodeFriendly
+
+pkgname=chatgpt-desktop-bin
+pkgver=26.803.81509
+pkgrel=1
+pkgdesc='Official ChatGPT desktop application by OpenAI'
+arch=('x86_64' 'aarch64')
+url='https://openai.com/codex/'
+license=('LicenseRef-proprietary' 'MIT')
+depends=(
+  'alsa-lib'
+  'at-spi2-core'
+  'cairo'
+  'cups'
+  'dbus'
+  'expat'
+  'gcc-libs'
+  'gdk-pixbuf2'
+  'glib2'
+  'glibc'
+  'graphite'
+  'gtk3'
+  'libdrm'
+  'libnotify'
+  'libusb'
+  'libx11'
+  'libxcb'
+  'libxcomposite'
+  'libxdamage'
+  'libxext'
+  'libxfixes'
+  'libxkbcommon'
+  'libxrandr'
+  'mesa'
+  'nspr'
+  'nss'
+  'openssl'
+  'pango'
+  'systemd-libs'
+  'xdg-utils'
+  'xz'
+)
+optdepends=(
+  'apparmor: load the included ChatGPT AppArmor profile'
+  'git: Git repository integration'
+)
+provides=("chatgpt-desktop=${pkgver}")
+conflicts=('chatgpt-desktop')
+options=('!strip')
+
+_deb_x86_64="chatgpt_${pkgver}_amd64.deb"
+_deb_aarch64="chatgpt_${pkgver}_arm64.deb"
+source_x86_64=("${_deb_x86_64}::https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/${_deb_x86_64}")
+source_aarch64=("${_deb_aarch64}::https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/${_deb_aarch64}")
+noextract=("${_deb_x86_64}" "${_deb_aarch64}")
+sha256sums_x86_64=('a9bf91a368f9f7c4eea38082a9fb8fb46b8d005b719a6d7715d2e5a1982c38eb')
+sha256sums_aarch64=('f38fcc194eca9ab0327dc10c92340681eae77c5d75164df700384ce2adaccbc1')
+
+package() {
+  local deb
+  case "$CARCH" in
+    x86_64) deb="${_deb_x86_64}" ;;
+    aarch64) deb="${_deb_aarch64}" ;;
+  esac
+
+  bsdtar -xOf "${srcdir}/${deb}" data.tar.xz |
+    bsdtar -xJf - -C "$pkgdir"
+
+  # Debian-specific package metadata is not useful on Arch Linux.
+  rm -rf "${pkgdir}/usr/share/lintian"
+
+  install -Dm644 \
+    "${pkgdir}/usr/share/doc/chatgpt/copyright" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.electron"
+  rm -rf "${pkgdir}/usr/share/doc/chatgpt"
+}
