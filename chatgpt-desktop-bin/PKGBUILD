@@ -2,7 +2,7 @@
 
 pkgname=chatgpt-desktop-bin
 pkgver=26.803.81509
-pkgrel=1
+pkgrel=2
 pkgdesc='Official ChatGPT desktop application by OpenAI'
 arch=('x86_64' 'aarch64')
 url='https://openai.com/codex/'
@@ -11,7 +11,6 @@ depends=(
   'alsa-lib'
   'at-spi2-core'
   'cairo'
-  'cups'
   'dbus'
   'expat'
   'gcc-libs'
@@ -20,7 +19,9 @@ depends=(
   'glibc'
   'graphite'
   'gtk3'
+  'libcups'
   'libdrm'
+  'libglvnd'
   'libnotify'
   'libusb'
   'libx11'
@@ -36,25 +37,41 @@ depends=(
   'nss'
   'openssl'
   'pango'
+  'sh'
   'systemd-libs'
   'xdg-utils'
-  'xz'
 )
 optdepends=(
   'apparmor: load the included ChatGPT AppArmor profile'
   'git: Git repository integration'
+  'gnome-keyring: Secret Service backend for credential storage'
+  'kde-cli-tools: file deletion support under KDE Plasma'
+  'libsecret: Secret Service credential storage support'
+  'pipewire: screen sharing under Wayland'
 )
-provides=("chatgpt-desktop=${pkgver}")
-conflicts=('chatgpt-desktop')
-options=('!strip')
+provides=(
+  "chatgpt=${pkgver}"
+  "chatgpt-desktop=${pkgver}"
+  "openai-codex-desktop=${pkgver}"
+)
+conflicts=(
+  'chatgpt'
+  'chatgpt-desktop'
+  'openai-codex-desktop'
+)
+replaces=('openai-codex-desktop')
+backup=('etc/apparmor.d/chatgpt')
+options=('!strip' '!debug')
 
 _deb_x86_64="chatgpt_${pkgver}_amd64.deb"
 _deb_aarch64="chatgpt_${pkgver}_arm64.deb"
 source_x86_64=("${_deb_x86_64}::https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/${_deb_x86_64}")
 source_aarch64=("${_deb_aarch64}::https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/${_deb_aarch64}")
+source=('chatgpt-launcher.sh')
 noextract=("${_deb_x86_64}" "${_deb_aarch64}")
 sha256sums_x86_64=('a9bf91a368f9f7c4eea38082a9fb8fb46b8d005b719a6d7715d2e5a1982c38eb')
 sha256sums_aarch64=('f38fcc194eca9ab0327dc10c92340681eae77c5d75164df700384ce2adaccbc1')
+sha256sums=('e036852c6e3c7d6f0654fb51ab48247bcf702a4674cabf68691e64944ee4caac')
 
 package() {
   local deb
@@ -64,7 +81,10 @@ package() {
   esac
 
   bsdtar -xOf "${srcdir}/${deb}" data.tar.xz |
-    bsdtar -xJf - -C "$pkgdir"
+    bsdtar --no-same-owner -xJf - -C "$pkgdir"
+
+  install -Dm755 "${srcdir}/chatgpt-launcher.sh" \
+    "${pkgdir}/usr/lib/chatgpt/codex-launcher"
 
   # Debian-specific package metadata is not useful on Arch Linux.
   rm -rf "${pkgdir}/usr/share/lintian"
@@ -72,5 +92,7 @@ package() {
   install -Dm644 \
     "${pkgdir}/usr/share/doc/chatgpt/copyright" \
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.electron"
+  ln -s /usr/lib/chatgpt/LICENSES.chromium.html \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSES.chromium.html"
   rm -rf "${pkgdir}/usr/share/doc/chatgpt"
 }
